@@ -1,6 +1,7 @@
 package tinywww
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"github.com/alphahorizonio/tinynet/pkg/tinynet"
@@ -63,7 +64,7 @@ func (tw *TinyWWW) ListenMaybeExit(exitOnError bool) error {
 		}
 		//fmt.Printf("Received: %s\n\n\n", buffer)
 
-		requestedURL := string(buffer[0:10])
+		requestedURL := string(buffer[:bytes.Index(buffer, []byte("\n"))])
 		if strings.Contains(requestedURL, "?") {
 			requestedURL = strings.Split(requestedURL, "?")[0]
 		}
