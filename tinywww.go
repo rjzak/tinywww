@@ -79,6 +79,11 @@ func (tw *TinyWWW) ListenMaybeExit(exitOnError bool) error {
 			response := NewTinyResponse()
 			request := NewTinyRequestFromBuffer(buffer)
 			handler(response, request)
+			connection.Write([]byte("HTTP/1.0 200\n"))
+			for key, value := range response.Headers {
+				connection.Write([]byte(fmt.Sprintf("%s: %s\n", key, value)))
+			}
+			connection.Write([]byte("\n\n"))
 			if _, err := connection.Write(response.Buffer); err != nil {
 				_, _ = fmt.Fprintf(os.Stderr, "Error writing to response connection: %s\n", err)
 			}
