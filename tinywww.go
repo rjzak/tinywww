@@ -79,15 +79,24 @@ func (tw *TinyWWW) ListenMaybeExit(exitOnError bool) error {
 			response := NewTinyResponse()
 			request := NewTinyRequestFromBuffer(buffer)
 			handler(response, request)
-			connection.Write([]byte("HTTP/1.0 200\n"))
-			for key, value := range response.Headers {
-				connection.Write([]byte(fmt.Sprintf("%s: %s\n", key, value)))
+			if _, err := connection.Write([]byte("HTTP/1.0 200\n")); err != nil {
+				_, _ = fmt.Fprintf(os.Stderr, "Error writing HTTP response to connection: %s\n", err)
 			}
-			connection.Write([]byte("\n\n"))
-			if _, err := connection.Write(response.Buffer); err != nil {
+			for key, value := range response.Headers {
+				if _, err := connection.Write([]byte(fmt.Sprintf("%s: %s\n", key, value))); err != nil {
+					_, _ = fmt.Fprintf(os.Stderr, "Error writing headers to connection: %s\n", err)
+				}
+			}
+			if _, err := connection.Write([]byte("\n\n")); err != nil {
 				_, _ = fmt.Fprintf(os.Stderr, "Error writing to response connection: %s\n", err)
 			}
+			if _, err := connection.Write(response.Buffer); err != nil {
+				_, _ = fmt.Fprintf(os.Stderr, "Error writing handler data to response connection: %s\n", err)
+			}
 		} else {
+			if _, err := connection.Write([]byte("HTTP/1.0 404\n\nNot Found.")); err != nil {
+				_, _ = fmt.Fprintf(os.Stderr, "Error writing 404 message to response connection: %s\n", err)
+			}
 			fmt.Printf("No handler for URL %s\n", requestedURL)
 		}
 		if err := connection.Close(); err != nil {
